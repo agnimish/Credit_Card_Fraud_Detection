@@ -47,6 +47,27 @@ plt.savefig('distribution_attributes.png')
 
 
 #%%
+from scipy.stats import norm
+
+f, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=(20, 6))
+
+v14_fraud_dist = new_df['V14'].loc[new_df['Class'] == 1].values
+sns.distplot(v14_fraud_dist,ax=ax1, fit=norm, color='#FB8861')
+ax1.set_title('V14 Distribution \n (Fraud Transactions)', fontsize=14)
+
+v12_fraud_dist = new_df['V12'].loc[new_df['Class'] == 1].values
+sns.distplot(v12_fraud_dist,ax=ax2, fit=norm, color='#56F9BB')
+ax2.set_title('V12 Distribution \n (Fraud Transactions)', fontsize=14)
+
+
+v10_fraud_dist = new_df['V10'].loc[new_df['Class'] == 1].values
+sns.distplot(v10_fraud_dist,ax=ax3, fit=norm, color='#C5B3F9')
+ax3.set_title('V10 Distribution \n (Fraud Transactions)', fontsize=14)
+
+plt.show()
+
+
+#%%
 # Scatter plot of all attributes Pairwise (Pair Plots)
 
 sns.set(style="ticks")
@@ -80,27 +101,6 @@ plt.savefig('corelation_matrix_heatmap.png')
 
 
 #%%
-# "Not working on my Laptop" - Have a look
-
-def qplot(a,b):
-    qn_a = np.sort(df[a].values)
-    qn_b = np.sort(df[b].values)
-
-    plt.plot(qn_a,qn_b, ls="", marker="o")
-
-    x = np.linspace(np.min((qn_a.min(),qn_b.min())), np.max((qn_a.max(),qn_b.max())))
-    plt.plot(x,x, color="k", ls="--")
-l = df.columns.values
-number_of_columns= 5
-number_of_rows = len(l)-1/number_of_columns
-plt.figure(figsize=(number_of_columns,5*number_of_rows))
-for i in range(len(l)-1):
-    for j in range(len(l)-1):
-        plt.subplot(number_of_rows + 1,number_of_columns,i*5+j+1)
-        qplot(l[i],l[j])
-
-
-#%%
 # Visualizing Data Distribution
 
 print('Non Fraudulent: ', round(df['Class'].value_counts()[0]/len(df) * 100,3), '% of the dataset')
@@ -111,7 +111,7 @@ print('Fraudulent: ', round(df['Class'].value_counts()[1]/len(df) * 100,3), '% o
 # plt.title('Class Distributions \n (0: No Fraud || 1: Fraud)', fontsize=14)
 # plt.show()
 
-fig, ax = plt.subplots(1, 30, figsize=(18,4))
+fig, ax = plt.subplots(1, 2, figsize=(18,4))
 
 amount_val = df['Amount'].values
 time_val = df['Time'].values
@@ -123,12 +123,6 @@ ax[0].set_xlim([min(amount_val), max(amount_val)])
 sns.distplot(time_val, ax=ax[1], color='b')
 ax[1].set_title('Distribution of Transaction Time', fontsize=14)
 ax[1].set_xlim([min(time_val), max(time_val)])
-
-V1_val = df.iloc[:,1].values
-sns.distplot(V1_val, ax=ax[2], color='g')
-ax[2].set_title('Distribution of V1', fontsize=14)
-ax[2].set_xlim([min(V1_val), max(V1_val)])
-
 # for i =1:30:
 
 plt.show()
@@ -209,6 +203,7 @@ print(test_counts_label/ len(original_ytest))
 #%%
 # Reducing Rows via Random-Under Sampling
 # NOTE: Replace this with reduction via Dissimilarity Matrix (if code runs successfully)
+
 # Since our classes are highly skewed we should make them equivalent in order to have a normal distribution of the classes.
 
 # Lets shuffle the data before creating the subsamples
@@ -232,11 +227,25 @@ new_df.head()
 print('Distribution of the Classes in the subsample dataset')
 print(new_df['Class'].value_counts()/len(new_df))
 
-
-
 sns.countplot('Class', data=new_df)
 plt.title('Equally Distributed Classes', fontsize=14)
 plt.show()
+
+
+#%%
+#Box plots
+
+l = new_df.columns.values 
+number_of_columns= 15
+number_of_rows = len(l)-1/number_of_columns #one column is of class so we won't take it for the corelation analysis
+plt.figure(figsize=(number_of_columns,5*number_of_rows))
+for i in range(0,len(l)-1):
+    plt.subplot(number_of_rows + 1,number_of_columns,i+1)
+    sns.set_style('whitegrid')
+    sns.boxplot(new_df[l[i]],color='blue',orient='v',width=20).set_title(l[i],fontsize=14)
+#     plt.tight_layout()
+
+plt.savefig('boxplots_new.png')
 
 
 #%%
@@ -245,7 +254,28 @@ plt.show()
 plt.subplots(figsize=(20,13 ))
 correlation_matrix = new_df.corr()
 sns.heatmap(correlation_matrix, annot=False)
-plt.savefig('corelation_matrix_heatmap.png')
+plt.savefig('corelation_matrix_heatmap_new.png')
+
+
+#%%
+sns.regplot(x='V12',y='V14',data=new_df)
+plt.savefig('V12_V14.png')
+
+
+#%%
+l = new_df.columns.values
+for i in range(31):
+    for j in range(i):
+        if(abs(correlation_matrix.iloc[i,j])>0.9 and i != j):
+            print(l[i],l[j])
+
+
+#%%
+new_df = new_df.drop(['V16', 'V17', 'V18'], axis = 1)
+
+
+#%%
+new_df.head()
 
 
 #%%
