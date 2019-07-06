@@ -414,16 +414,22 @@ for i in range(31):
         if(abs(correlation_matrix.iloc[i,j])>0.9 and i != j):
             print(l[i],l[j])
 
+#%% [markdown]
+# ### Note: _We are not dropping any of the correlated columns because after performing classification, we found that the accuracy of our model decreases incase of dropping the columns_.
 
 #%%
-new_df = new_df.drop(['V12', 'V17', 'V18'], axis = 1)
+# new_df = new_df.drop(['V12', 'V17', 'V18'], axis = 1)
 
 
 #%%
 new_df.head()
 
+
+#%%
+new_df.describe()
+
 #%% [markdown]
-# The preprocessed dataset has __27__ features and ~1000 data points with an equiprobable distribution 
+# The preprocessed dataset has __30__ features and ~1000 data points with an equiprobable distribution 
 # 
 #%% [markdown]
 # Conclusion  
@@ -436,6 +442,107 @@ new_df.head()
 # 5) 2 way sampling and future tasks  
 # 6) t-SNE  
 #%% [markdown]
+# ### --------------------------------------------------------------------------------------------------------------------------------
+# ### --------------------------------------------------------------------------------------------------------------------------------
+#%% [markdown]
+# ### Outlier Removal
+
+#%%
+# # -----> V14 Removing Outliers (Highest Negative Correlated with Labels)
+v14_fraud = new_df['V14'].loc[new_df['Class'] == 1].values
+q25, q75 = np.percentile(v14_fraud, 25), np.percentile(v14_fraud, 75)
+print('Quartile 25: {} | Quartile 75: {}'.format(q25, q75))
+v14_iqr = q75 - q25
+print('iqr: {}'.format(v14_iqr))
+
+v14_cut_off = v14_iqr * 1.5
+v14_lower, v14_upper = q25 - v14_cut_off, q75 + v14_cut_off
+print('Cut Off: {}'.format(v14_cut_off))
+print('V14 Lower: {}'.format(v14_lower))
+print('V14 Upper: {}'.format(v14_upper))
+
+outliers = [x for x in v14_fraud if x < v14_lower or x > v14_upper]
+print('Feature V14 Outliers for Fraud Cases: {}'.format(len(outliers)))
+print('V14 outliers:{}'.format(outliers))
+
+new_df = new_df.drop(new_df[(new_df['V14'] > v14_upper) | (new_df['V14'] < v14_lower)].index)
+print('----' * 44)
+
+# -----> V12 removing outliers from fraud transactions
+v12_fraud = new_df['V12'].loc[new_df['Class'] == 1].values
+q25, q75 = np.percentile(v12_fraud, 25), np.percentile(v12_fraud, 75)
+v12_iqr = q75 - q25
+
+v12_cut_off = v12_iqr * 1.5
+v12_lower, v12_upper = q25 - v12_cut_off, q75 + v12_cut_off
+print('V12 Lower: {}'.format(v12_lower))
+print('V12 Upper: {}'.format(v12_upper))
+outliers = [x for x in v12_fraud if x < v12_lower or x > v12_upper]
+print('V12 outliers: {}'.format(outliers))
+print('Feature V12 Outliers for Fraud Cases: {}'.format(len(outliers)))
+new_df = new_df.drop(new_df[(new_df['V12'] > v12_upper) | (new_df['V12'] < v12_lower)].index)
+print('Number of Instances after outliers removal: {}'.format(len(new_df)))
+print('----' * 44)
+
+
+# Removing outliers V10 Feature
+v10_fraud = new_df['V10'].loc[new_df['Class'] == 1].values
+q25, q75 = np.percentile(v10_fraud, 25), np.percentile(v10_fraud, 75)
+v10_iqr = q75 - q25
+
+v10_cut_off = v10_iqr * 1.5
+v10_lower, v10_upper = q25 - v10_cut_off, q75 + v10_cut_off
+print('V10 Lower: {}'.format(v10_lower))
+print('V10 Upper: {}'.format(v10_upper))
+outliers = [x for x in v10_fraud if x < v10_lower or x > v10_upper]
+print('V10 outliers: {}'.format(outliers))
+print('Feature V10 Outliers for Fraud Cases: {}'.format(len(outliers)))
+new_df = new_df.drop(new_df[(new_df['V10'] > v10_upper) | (new_df['V10'] < v10_lower)].index)
+print('Number of Instances after outliers removal: {}'.format(len(new_df)))
+
+
+#%%
+f,(ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20,6))
+
+colors = ['#B3F9C5', '#f9c5b3']
+# Boxplots with outliers removed
+# Feature V14
+sns.boxplot(x="Class", y="V14", data=new_df,ax=ax1, palette=colors)
+ax1.set_title("V14 Feature \n Reduction of outliers", fontsize=14)
+ax1.annotate('Fewer extreme \n outliers', xy=(0.98, -17.5), xytext=(0, -12),
+            arrowprops=dict(facecolor='black'),
+            fontsize=14)
+
+# Feature 12
+sns.boxplot(x="Class", y="V12", data=new_df, ax=ax2, palette=colors)
+ax2.set_title("V12 Feature \n Reduction of outliers", fontsize=14)
+ax2.annotate('Fewer extreme \n outliers', xy=(0.98, -17.3), xytext=(0, -12),
+            arrowprops=dict(facecolor='black'),
+            fontsize=14)
+
+# Feature V10
+sns.boxplot(x="Class", y="V10", data=new_df, ax=ax3, palette=colors)
+ax3.set_title("V10 Feature \n Reduction of outliers", fontsize=14)
+ax3.annotate('Fewer extreme \n outliers', xy=(0.95, -16.5), xytext=(0, -12),
+            arrowprops=dict(facecolor='black'),
+            fontsize=14)
+
+
+plt.show()
+
+
+#%%
+new_df.head()
+
+
+#%%
+new_df.to_csv('outlier_removed_df.csv')
+
+
+#%%
+
+
+#%% [markdown]
 # ## Classification algorithms that we will be using:  
 # 
 # ### Logistic Regression
@@ -445,4 +552,8 @@ new_df.head()
 # ### Support Vector Classifier
 # ### Random Forest Classifier
 # ### XGBoost Classifier   
+
+#%%
+
+
 
